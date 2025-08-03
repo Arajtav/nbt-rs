@@ -21,7 +21,28 @@ pub enum Tag {
     LongArray(Array<i64>),
 }
 
+impl Tag {
+    pub(crate) fn tag_id(&self) -> TagId {
+        match self {
+            Tag::End => TagId::End,
+            Tag::Byte(_) => TagId::Byte,
+            Tag::Short(_) => TagId::Short,
+            Tag::Int(_) => TagId::Int,
+            Tag::Long(_) => TagId::Long,
+            Tag::Float(_) => TagId::Float,
+            Tag::Double(_) => TagId::Double,
+            Tag::ByteArray(_) => TagId::ByteArray,
+            Tag::String(_) => TagId::String,
+            Tag::List(_) => TagId::List,
+            Tag::Compound(_) => TagId::Compound,
+            Tag::IntArray(_) => TagId::IntArray,
+            Tag::LongArray(_) => TagId::LongArray,
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Copy)]
+#[repr(u8)]
 pub(crate) enum TagId {
     End = 0,
     Byte,
@@ -36,12 +57,6 @@ pub(crate) enum TagId {
     Compound,
     IntArray,
     LongArray,
-}
-
-impl From<TagId> for u8 {
-    fn from(tag: TagId) -> Self {
-        tag as u8
-    }
 }
 
 impl TryFrom<u8> for TagId {
