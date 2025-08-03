@@ -1,4 +1,4 @@
-use nbt_rs::{ParseError, parse_nbt};
+use nbt_rs::parser::{ParseError, parse_nbt};
 
 #[test]
 fn test_parse_invalid_tag_id() {
