@@ -53,6 +53,7 @@ fn parse_named_tag(data: &[u8]) -> Result<(NamedTag, &[u8])> {
         ));
     }
 
+    // tag_id's validity is checked after the name is parsed, therefore InvalidUtf8 has higher precedence
     let (name, data) = parse_string(data)?;
     let (tag, data) = parse_payload(tag_id, data)?;
     Ok((NamedTag { name, tag }, data))
@@ -183,6 +184,7 @@ fn parse_long_array(data: &[u8]) -> Result<(Vec<i64>, &[u8])> {
 }
 
 fn parse_list(data: &[u8]) -> Result<(Tag, &[u8])> {
+    // element_type's validity is not checked if the length is 0
     let (&element_type, data) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
     let (len, mut data) = parse_int(data)?;
     if len < 0 {
