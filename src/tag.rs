@@ -9,10 +9,27 @@ pub enum Tag {
     Double(f64),
     ByteArray(Vec<u8>),
     String(String),
-    List(Vec<Tag>),
+    List(List),
     Compound(Vec<NamedTag>),
     IntArray(Vec<i32>),
     LongArray(Vec<i64>),
+}
+
+#[derive(Debug)]
+pub enum List {
+    End,
+    Byte(Vec<i8>),
+    Short(Vec<i16>),
+    Int(Vec<i32>),
+    Long(Vec<i64>),
+    Float(Vec<f32>),
+    Double(Vec<f64>),
+    ByteArray(Vec<Vec<u8>>),
+    String(Vec<String>),
+    List(Vec<List>),
+    Compound(Vec<Vec<NamedTag>>),
+    IntArray(Vec<Vec<i32>>),
+    LongArray(Vec<Vec<i64>>),
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
