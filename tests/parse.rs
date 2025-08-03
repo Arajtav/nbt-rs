@@ -1,4 +1,4 @@
-use nbt_rs::{parser::parse_nbt, tag::Tag};
+use nbt_rs::parser::parse_nbt;
 
 #[test]
 fn test_parse_level_dat() {
@@ -14,8 +14,8 @@ fn test_parse_simple_compound() {
 
     let root = parse_nbt(data).unwrap();
     assert!(root.0.is_empty());
-    let a = root.1.get("a").unwrap();
-    let b = root.1.get("b").unwrap();
-    assert!(matches!(a, Tag::Byte(0x00)));
-    assert!(matches!(b, Tag::Byte(0x01)));
+    let a = *root.1.get("a").unwrap().as_byte().unwrap();
+    let b = *root.1.get("b").unwrap().as_byte().unwrap();
+    assert_eq!(a, 0x00);
+    assert_eq!(b, 0x01);
 }

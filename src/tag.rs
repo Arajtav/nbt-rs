@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+use enum_as_inner::EnumAsInner;
+
+#[derive(Debug, EnumAsInner)]
 pub enum Tag {
     End,
     Byte(i8),
@@ -49,7 +51,7 @@ impl Compound {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, EnumAsInner)]
 pub enum List {
     End,
     Byte(Vec<i8>),
