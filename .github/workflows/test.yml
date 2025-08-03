@@ -1,0 +1,18 @@
+on: push
+name: Run Tests
+
+env:
+    RUSTFLAGS: "-Dwarnings"
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  shared-key: "rust-ci-cache"
+
+            - name: Run Tests
+              run: cargo test
