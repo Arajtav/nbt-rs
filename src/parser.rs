@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::tag::{List, NamedTag, Tag, TagId};
+use crate::tag::{Compound, List, Tag, TagId};
 
 #[derive(Debug, Error)]
 pub enum ParseError {
@@ -14,6 +14,10 @@ pub enum ParseError {
     NegativeLength(i32),
     #[error("Leftover data: {0} bytes")]
     LeftoverData(usize),
+    #[error("Duplicate tag name")]
+    DuplicateTagName(String),
+    #[error("Not an NBT file")]
+    NotNBT,
 }
 
 pub type Result<T> = std::result::Result<T, ParseError>;
@@ -22,23 +26,6 @@ fn parse_tag_id(data: &[u8]) -> Result<(TagId, &[u8])> {
     let (&tag_id, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
     let tag_id = TagId::try_from(tag_id).map_err(|_| ParseError::InvalidTagId(tag_id))?;
     Ok((tag_id, rest))
-}
-
-fn parse_named_tag(data: &[u8]) -> Result<(NamedTag, &[u8])> {
-    let (tag_id, data) = parse_tag_id(data)?;
-    if tag_id == TagId::End {
-        return Ok((
-            NamedTag {
-                name: "".to_string(),
-                tag: Tag::End,
-            },
-            data,
-        ));
-    }
-
-    let (name, data) = parse_string(data)?;
-    let (tag, data) = parse_payload(tag_id, data)?;
-    Ok((NamedTag { name, tag }, data))
 }
 
 fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
@@ -203,26 +190,37 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
     })
 }
 
-fn parse_compound(mut data: &[u8]) -> Result<(Vec<NamedTag>, &[u8])> {
-    let mut tags = Vec::new();
+fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
+    let mut compound = Compound::new();
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
         if tag_id == TagId::End {
-            return Ok((tags, rest));
+            return Ok((compound, rest));
         }
 
-        let (tag, rest) = parse_named_tag(data)?;
-        tags.push(tag);
+        let (name, rest) = parse_string(rest)?;
+        let (tag, rest) = parse_payload(tag_id, rest)?;
+
+        if compound.insert(name.clone(), tag).is_some() {
+            return Err(ParseError::DuplicateTagName(name));
+        }
         data = rest;
     }
 }
 
-pub fn parse_nbt(data: &[u8]) -> Result<NamedTag> {
-    let (tag, data) = parse_named_tag(data)?;
+pub fn parse_nbt(data: &[u8]) -> Result<(String, Compound)> {
+    let (tag_id, data) = parse_tag_id(data)?;
+    if tag_id != TagId::Compound {
+        return Err(ParseError::NotNBT);
+    }
+
+    let (name, data) = parse_string(data)?;
+    let (tag, data) = parse_compound(data)?;
+
     if !data.is_empty() {
         Err(ParseError::LeftoverData(data.len()))
     } else {
-        Ok(tag)
+        Ok((name, tag))
     }
 }

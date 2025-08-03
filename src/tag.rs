@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub enum Tag {
     End,
@@ -10,9 +12,41 @@ pub enum Tag {
     ByteArray(Vec<u8>),
     String(String),
     List(List),
-    Compound(Vec<NamedTag>),
+    Compound(Compound),
     IntArray(Vec<i32>),
     LongArray(Vec<i64>),
+}
+
+#[derive(Debug)]
+pub struct Compound {
+    data: HashMap<String, Tag>,
+}
+
+impl Default for Compound {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Compound {
+    pub fn new() -> Self {
+        Self {
+            data: HashMap::new(),
+        }
+    }
+
+    pub fn remove(&mut self, key: &str) -> Option<Tag> {
+        self.data.remove(key)
+    }
+
+    pub fn get(&self, key: &str) -> Option<&Tag> {
+        self.data.get(key)
+    }
+
+    pub fn insert(&mut self, key: String, value: Tag) -> Option<Tag> {
+        assert!(!matches!(value, Tag::End));
+        self.data.insert(key, value)
+    }
 }
 
 #[derive(Debug)]
@@ -27,7 +61,7 @@ pub enum List {
     ByteArray(Vec<Vec<u8>>),
     String(Vec<String>),
     List(Vec<List>),
-    Compound(Vec<Vec<NamedTag>>),
+    Compound(Vec<Compound>),
     IntArray(Vec<Vec<i32>>),
     LongArray(Vec<Vec<i64>>),
 }
@@ -75,10 +109,4 @@ impl TryFrom<u8> for TagId {
             _ => Err(()),
         }
     }
-}
-
-#[derive(Debug)]
-pub struct NamedTag {
-    pub name: String,
-    pub tag: Tag,
 }
