@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use thiserror::Error;
 
-use crate::tag::{Compound, List, Tag, TagId};
+use crate::tags::{Array, List, String, Tag, TagId};
 
 #[derive(Debug, Error)]
 pub enum ParseError {
@@ -97,7 +99,7 @@ fn parse_double(data: &[u8]) -> Result<(f64, &[u8])> {
     Ok((value, data))
 }
 
-fn parse_byte_array(data: &[u8]) -> Result<(Vec<u8>, &[u8])> {
+fn parse_byte_array(data: &[u8]) -> Result<(Array<u8>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -106,7 +108,7 @@ fn parse_byte_array(data: &[u8]) -> Result<(Vec<u8>, &[u8])> {
     let (data, rest) = data
         .split_at_checked(len as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
-    Ok((Vec::from(data), rest))
+    Ok((Array::new_unchecked(Vec::from(data)), rest))
 }
 
 fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
@@ -115,11 +117,11 @@ fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
         .split_at_checked(len as u16 as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
 
-    let data = String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
-    Ok((data, rest))
+    let data = std::string::String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
+    Ok((String::new_unchecked(data), rest))
 }
 
-fn parse_int_array(data: &[u8]) -> Result<(Vec<i32>, &[u8])> {
+fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -133,10 +135,10 @@ fn parse_int_array(data: &[u8]) -> Result<(Vec<i32>, &[u8])> {
         .map(|chunk| i32::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((data, rest))
+    Ok((Array::new_unchecked(data), rest))
 }
 
-fn parse_long_array(data: &[u8]) -> Result<(Vec<i64>, &[u8])> {
+fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -150,7 +152,7 @@ fn parse_long_array(data: &[u8]) -> Result<(Vec<i64>, &[u8])> {
         .map(|chunk| i64::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((data, rest))
+    Ok((Array::new_unchecked(data), rest))
 }
 
 fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
@@ -169,7 +171,7 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
                 items.push(item);
                 data = rest;
             }
-            (List::$variant(items), data)
+            (List::$variant(Array::new_unchecked(items)), data)
         }};
     }
 
@@ -190,8 +192,8 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
     })
 }
 
-fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
-    let mut compound = Compound::new();
+fn parse_compound(mut data: &[u8]) -> Result<(HashMap<String, Tag>, &[u8])> {
+    let mut compound = HashMap::new();
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
@@ -209,7 +211,7 @@ fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
     }
 }
 
-pub fn parse_nbt(data: &[u8]) -> Result<(String, Compound)> {
+pub fn parse_nbt(data: &[u8]) -> Result<(String, HashMap<String, Tag>)> {
     let (tag_id, data) = parse_tag_id(data)?;
     if tag_id != TagId::Compound {
         return Err(ParseError::NotNBT);

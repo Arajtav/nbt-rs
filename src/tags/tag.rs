@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use enum_as_inner::EnumAsInner;
 
-#[derive(Debug, EnumAsInner)]
+use crate::tags::{Array, List, String};
+
+#[derive(Debug, EnumAsInner, PartialEq)]
 pub enum Tag {
     End,
     Byte(i8),
@@ -11,61 +13,12 @@ pub enum Tag {
     Long(i64),
     Float(f32),
     Double(f64),
-    ByteArray(Vec<u8>),
+    ByteArray(Array<u8>),
     String(String),
     List(List),
-    Compound(Compound),
-    IntArray(Vec<i32>),
-    LongArray(Vec<i64>),
-}
-
-#[derive(Debug)]
-pub struct Compound {
-    data: HashMap<String, Tag>,
-}
-
-impl Default for Compound {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Compound {
-    pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-        }
-    }
-
-    pub fn remove(&mut self, key: &str) -> Option<Tag> {
-        self.data.remove(key)
-    }
-
-    pub fn get(&self, key: &str) -> Option<&Tag> {
-        self.data.get(key)
-    }
-
-    pub fn insert(&mut self, key: String, value: Tag) -> Option<Tag> {
-        assert!(!matches!(value, Tag::End));
-        self.data.insert(key, value)
-    }
-}
-
-#[derive(Debug, EnumAsInner)]
-pub enum List {
-    End,
-    Byte(Vec<i8>),
-    Short(Vec<i16>),
-    Int(Vec<i32>),
-    Long(Vec<i64>),
-    Float(Vec<f32>),
-    Double(Vec<f64>),
-    ByteArray(Vec<Vec<u8>>),
-    String(Vec<String>),
-    List(Vec<List>),
-    Compound(Vec<Compound>),
-    IntArray(Vec<Vec<i32>>),
-    LongArray(Vec<Vec<i64>>),
+    Compound(HashMap<String, Tag>),
+    IntArray(Array<i32>),
+    LongArray(Array<i64>),
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
