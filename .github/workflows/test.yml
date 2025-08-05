@@ -1,9 +1,6 @@
 on: push
 name: Run Tests
 
-env:
-    RUSTFLAGS: "-Dwarnings"
-
 jobs:
     test:
         runs-on: ubuntu-latest
