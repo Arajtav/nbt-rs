@@ -30,30 +30,6 @@ fn parse_tag_id(data: &[u8]) -> Result<(TagId, &[u8])> {
     Ok((tag_id, rest))
 }
 
-fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
-    macro_rules! parse {
-        ($variant:ident, $parser:expr) => {
-            $parser(data).map(|(v, rest)| (Tag::$variant(v), rest))
-        };
-    }
-
-    match tag_id {
-        TagId::End => Ok((Tag::End, data)),
-        TagId::Byte => parse!(Byte, parse_byte),
-        TagId::Short => parse!(Short, parse_short),
-        TagId::Int => parse!(Int, parse_int),
-        TagId::Long => parse!(Long, parse_long),
-        TagId::Float => parse!(Float, parse_float),
-        TagId::Double => parse!(Double, parse_double),
-        TagId::ByteArray => parse!(ByteArray, parse_byte_array),
-        TagId::String => parse!(String, parse_string),
-        TagId::List => parse!(List, parse_list),
-        TagId::Compound => parse!(Compound, parse_compound),
-        TagId::IntArray => parse!(IntArray, parse_int_array),
-        TagId::LongArray => parse!(LongArray, parse_long_array),
-    }
-}
-
 fn parse_byte(data: &[u8]) -> Result<(i8, &[u8])> {
     let (&v, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
     Ok((v as i8, rest))
@@ -108,7 +84,7 @@ fn parse_byte_array(data: &[u8]) -> Result<(Array<u8>, &[u8])> {
     let (data, rest) = data
         .split_at_checked(len as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
-    Ok((Array::new_unchecked(Vec::from(data)), rest))
+    Ok((Array { items: data.into() }, rest))
 }
 
 fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
@@ -118,7 +94,7 @@ fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
         .ok_or(ParseError::UnexpectedEndOfInput)?;
 
     let data = std::string::String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
-    Ok((String::new_unchecked(data), rest))
+    Ok((String { str: data }, rest))
 }
 
 fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
@@ -135,7 +111,7 @@ fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
         .map(|chunk| i32::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array::new_unchecked(data), rest))
+    Ok((Array { items: data }, rest))
 }
 
 fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
@@ -152,7 +128,7 @@ fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
         .map(|chunk| i64::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array::new_unchecked(data), rest))
+    Ok((Array { items: data }, rest))
 }
 
 fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
@@ -171,7 +147,12 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
                 items.push(item);
                 data = rest;
             }
-            (List::$variant(Array::new_unchecked(items)), data)
+            (
+                List::$variant(Array {
+                    items: items.into(),
+                }),
+                data,
+            )
         }};
     }
 
@@ -190,6 +171,30 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
         TagId::IntArray => parse!(parse_int_array, IntArray),
         TagId::LongArray => parse!(parse_long_array, LongArray),
     })
+}
+
+fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
+    macro_rules! parse {
+        ($variant:ident, $parser:expr) => {
+            $parser(data).map(|(v, rest)| (Tag::$variant(v), rest))
+        };
+    }
+
+    match tag_id {
+        TagId::End => Ok((Tag::End, data)),
+        TagId::Byte => parse!(Byte, parse_byte),
+        TagId::Short => parse!(Short, parse_short),
+        TagId::Int => parse!(Int, parse_int),
+        TagId::Long => parse!(Long, parse_long),
+        TagId::Float => parse!(Float, parse_float),
+        TagId::Double => parse!(Double, parse_double),
+        TagId::ByteArray => parse!(ByteArray, parse_byte_array),
+        TagId::String => parse!(String, parse_string),
+        TagId::List => parse!(List, parse_list),
+        TagId::Compound => parse!(Compound, parse_compound),
+        TagId::IntArray => parse!(IntArray, parse_int_array),
+        TagId::LongArray => parse!(LongArray, parse_long_array),
+    }
 }
 
 fn parse_compound(mut data: &[u8]) -> Result<(HashMap<String, Tag>, &[u8])> {

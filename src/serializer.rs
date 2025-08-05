@@ -33,7 +33,7 @@ fn serialize_byte_array(data: &Array<u8>, buffer: &mut Vec<u8>) {
 
 fn serialize_string(data: &String, buffer: &mut Vec<u8>) {
     serialize_short(&(data.len() as u16 as i16), buffer);
-    buffer.extend_from_slice(data.as_slice());
+    buffer.extend_from_slice(data.as_bytes());
 }
 
 fn serialize_int_array(data: &Array<i32>, buffer: &mut Vec<u8>) {
@@ -111,11 +111,11 @@ fn serialize_named_tag(name: &String, tag: &Tag, buffer: &mut Vec<u8>) {
     serialize_payload(tag, buffer);
 }
 
-pub fn serialize_nbt(name: &String, data: &HashMap<String, Tag>) -> Vec<u8> {
+pub fn serialize_nbt(name: &String, data: &HashMap<String, Tag>) -> Box<[u8]> {
     // would have just used serialize_named_tag, however i would need to clone for Tag::Compound()
     let mut buffer = Vec::new();
     buffer.push(TagId::Compound as u8);
     serialize_string(name, &mut buffer);
     serialize_compound(data, &mut buffer);
-    buffer
+    buffer.into_boxed_slice()
 }

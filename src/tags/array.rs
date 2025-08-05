@@ -4,15 +4,7 @@ use crate::tags::ValidationError;
 
 #[derive(Debug, PartialEq)]
 pub struct Array<T> {
-    data: Box<[T]>,
-}
-
-impl<T> Array<T> {
-    pub(crate) fn new_unchecked(data: Vec<T>) -> Self {
-        Self {
-            data: data.into_boxed_slice(),
-        }
-    }
+    pub(crate) items: Box<[T]>,
 }
 
 impl<T> TryFrom<Vec<T>> for Array<T> {
@@ -22,7 +14,7 @@ impl<T> TryFrom<Vec<T>> for Array<T> {
             Err((ValidationError::ArrayTooLong(vec.len()), vec))
         } else {
             Ok(Self {
-                data: vec.into_boxed_slice(),
+                items: vec.into_boxed_slice(),
             })
         }
     }
@@ -30,13 +22,7 @@ impl<T> TryFrom<Vec<T>> for Array<T> {
 
 impl<T> From<Array<T>> for Vec<T> {
     fn from(array: Array<T>) -> Self {
-        array.data.into_vec()
-    }
-}
-
-impl<T> Array<T> {
-    pub fn as_slice(&self) -> &[T] {
-        &self.data
+        array.items.into_vec()
     }
 }
 
@@ -44,6 +30,6 @@ impl<T> Deref for Array<T> {
     type Target = [T];
 
     fn deref(&self) -> &Self::Target {
-        &self.data
+        &self.items
     }
 }
