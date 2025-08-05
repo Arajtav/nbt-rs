@@ -4,20 +4,36 @@ use enum_as_inner::EnumAsInner;
 
 use crate::tags::{Array, List, String};
 
+/// An NBT Tag.
+///
+/// Represents all defined NBT tags.
 #[derive(Debug, EnumAsInner, PartialEq)]
 pub enum Tag {
+    /// An empty tag.
     End,
+    /// A signed byte.
     Byte(i8),
+    /// A signed 2-byte integer.
     Short(i16),
+    /// A signed 4-byte integer.
     Int(i32),
+    /// A signed 8-byte integer.
     Long(i64),
+    /// A 4-byte float.
     Float(f32),
+    /// A 8-byte float.
     Double(f64),
+    /// An NBT `Array` of bytes.
     ByteArray(Array<u8>),
+    /// An NBT `String`.
     String(String),
+    /// An NBT `List`.
     List(List),
+    /// A `HashMap` of NBT `Tag`s, with NBT `String` as a key.
     Compound(HashMap<String, Tag>),
+    /// An NBT `Array` of signed 4-byte integer.
     IntArray(Array<i32>),
+    /// An NBT `Array` of signed 8-byte integer.
     LongArray(Array<i64>),
 }
 

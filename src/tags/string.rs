@@ -6,6 +6,9 @@ use std::{
 
 use crate::tags::ValidationError;
 
+/// An NBT String.
+///
+/// Wrapper around a `String`, limiting its length to `u16:MAX` bytes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct String {
     pub(crate) str: std::string::String,
@@ -19,6 +22,11 @@ impl Hash for String {
 
 impl TryFrom<std::string::String> for String {
     type Error = (ValidationError, std::string::String);
+
+    /// Attempts to create a `String` from an `std::string::String`.
+    ///
+    /// # Errors
+    /// Returns an error if the `std::string::String` is longer than `u16::MAX`.
     fn try_from(str: std::string::String) -> Result<Self, Self::Error> {
         if str.len() > u16::MAX as usize {
             Err((ValidationError::StringTooLong(str.len()), str))

@@ -1,3 +1,5 @@
+//! Functions for serializing NBT data into bytes.
+
 use std::collections::HashMap;
 
 use crate::tags::{Array, List, String, Tag, TagId};
@@ -111,6 +113,12 @@ fn serialize_named_tag(name: &String, tag: &Tag, buffer: &mut Vec<u8>) {
     serialize_payload(tag, buffer);
 }
 
+/// Serializes a named NBT Compound into a buffer of bytes.
+/// This function is guaranteed not to fail, since all `Tag`s are validated at creation.
+///
+/// # Parameters
+/// - `name`: The name of the root tag. Typically an empty string.
+/// - `data`: A `HashMap` representing the contents of the compound tag.
 pub fn serialize_nbt(name: &String, data: &HashMap<String, Tag>) -> Box<[u8]> {
     // would have just used serialize_named_tag, however i would need to clone for Tag::Compound()
     let mut buffer = Vec::new();

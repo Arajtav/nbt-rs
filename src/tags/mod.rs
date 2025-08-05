@@ -1,3 +1,7 @@
+//! Definitions of the NBT tag types and related data structures.
+//!
+//! Provided types ensure the data can be serialized to a valid NBT by validating the data at creation time.
+
 mod array;
 mod errors;
 mod list;

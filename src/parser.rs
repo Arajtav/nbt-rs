@@ -1,27 +1,38 @@
+//! Functions for parsing NBT data.
+
 use std::collections::HashMap;
 
 use thiserror::Error;
 
 use crate::tags::{Array, List, String, Tag, TagId};
 
+/// Errors that can occur while parsing NBT data.
 #[derive(Debug, Error)]
 pub enum ParseError {
+    /// The encountered tag ID is not valid.
     #[error("Invalid tag ID: {0}")]
     InvalidTagId(u8),
+    /// The input ended before the parser finished.
     #[error("Unexpected end of input")]
     UnexpectedEndOfInput,
+    /// The string data is not valid UTF-8.
     #[error("Invalid UTF-8 data")]
     InvalidUtf8,
+    /// The encountered length of an `Array` or a `List` is negative.
     #[error("Negative length encountered: {0}")]
     NegativeLength(i32),
+    /// Extra bytes remaining after the parser finished.
     #[error("Leftover data: {0} bytes")]
     LeftoverData(usize),
+    /// A non-unique tag name was encountered.
     #[error("Duplicate tag name")]
     DuplicateTagName(String),
+    /// The data is not a valid NBT file.
     #[error("Not an NBT file")]
     NotNBT,
 }
 
+/// A shorthand for `Result<T, ParseError>`.
 pub type Result<T> = std::result::Result<T, ParseError>;
 
 fn parse_tag_id(data: &[u8]) -> Result<(TagId, &[u8])> {
@@ -216,6 +227,9 @@ fn parse_compound(mut data: &[u8]) -> Result<(HashMap<String, Tag>, &[u8])> {
     }
 }
 
+/// Parses a named NBT compound from a byte slice.
+///
+/// Expects the input to be a named NBT Compound, with no leftover data.
 pub fn parse_nbt(data: &[u8]) -> Result<(String, HashMap<String, Tag>)> {
     let (tag_id, data) = parse_tag_id(data)?;
     if tag_id != TagId::Compound {
