@@ -23,8 +23,8 @@ pub enum Tag {
     Float(f32),
     /// A 8-byte float.
     Double(f64),
-    /// An NBT `Array` of bytes.
-    ByteArray(Array<u8>),
+    /// An NBT `Array` of signed bytes.
+    ByteArray(Array<i8>),
     /// An NBT `String`.
     String(String),
     /// An NBT `List`.

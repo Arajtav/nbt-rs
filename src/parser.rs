@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use bytemuck::cast_slice;
 use thiserror::Error;
 
 use crate::tags::{Array, List, String, Tag, TagId};
@@ -86,7 +87,7 @@ fn parse_double(data: &[u8]) -> Result<(f64, &[u8])> {
     Ok((value, data))
 }
 
-fn parse_byte_array(data: &[u8]) -> Result<(Array<u8>, &[u8])> {
+fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -95,7 +96,12 @@ fn parse_byte_array(data: &[u8]) -> Result<(Array<u8>, &[u8])> {
     let (data, rest) = data
         .split_at_checked(len as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
-    Ok((Array { items: data.into() }, rest))
+    Ok((
+        Array {
+            items: cast_slice(data).into(),
+        },
+        rest,
+    ))
 }
 
 fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {

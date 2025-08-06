@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 
+use bytemuck::cast_slice;
+
 use crate::tags::{Array, List, String, Tag, TagId};
 
 fn serialize_byte(data: &i8, buffer: &mut Vec<u8>) {
@@ -28,9 +30,9 @@ fn serialize_double(data: &f64, buffer: &mut Vec<u8>) {
     buffer.extend_from_slice(&data.to_be_bytes());
 }
 
-fn serialize_byte_array(data: &Array<u8>, buffer: &mut Vec<u8>) {
+fn serialize_byte_array(data: &Array<i8>, buffer: &mut Vec<u8>) {
     serialize_int(&(data.len() as i32), buffer);
-    buffer.extend_from_slice(data);
+    buffer.extend_from_slice(cast_slice(&data.items));
 }
 
 fn serialize_string(data: &String, buffer: &mut Vec<u8>) {

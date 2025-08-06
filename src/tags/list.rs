@@ -25,7 +25,7 @@ pub enum List {
     /// A `List` of 8-byte floats.
     Double(Array<f64>),
     /// A `List` of NBT Byte Arrays.
-    ByteArray(Array<Array<u8>>),
+    ByteArray(Array<Array<i8>>),
     /// A `List` of NBT `String`s.
     String(Array<String>),
     /// A `List` of NBT `List`s.

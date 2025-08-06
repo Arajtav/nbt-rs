@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bytemuck = "1.23.1"
 enum-as-inner = "0.6.1"
 thiserror = "2.0"
