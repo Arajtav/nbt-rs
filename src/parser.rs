@@ -102,6 +102,7 @@ fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8])> {
     ))
 }
 
+#[inline(always)]
 fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
     let (len, data) = parse_short(data)?;
     let (data, rest) = data

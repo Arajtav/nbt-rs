@@ -107,6 +107,7 @@ fn serialize_payload(data: &Tag, buffer: &mut Vec<u8>) {
     }
 }
 
+#[inline(always)]
 fn serialize_named_tag(name: &String, tag: &Tag, buffer: &mut Vec<u8>) {
     buffer.push(tag.tag_id() as u8);
     serialize_string(name, buffer);
