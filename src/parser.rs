@@ -1,11 +1,9 @@
 //! Functions for parsing NBT data.
 
-use std::collections::HashMap;
-
 use bytemuck::cast_slice;
 use thiserror::Error;
 
-use crate::tags::{Array, List, String, Tag, TagId};
+use crate::tags::{Array, Compound, List, String, Tag, TagId};
 
 /// Errors that can occur while parsing NBT data.
 #[derive(Debug, Error)]
@@ -214,21 +212,25 @@ fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
     }
 }
 
-fn parse_compound(mut data: &[u8]) -> Result<(HashMap<String, Tag>, &[u8])> {
-    let mut compound = HashMap::new();
+fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
+    let mut compound: Vec<(String, Tag)> = Vec::new();
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
         if tag_id == TagId::End {
-            return Ok((compound, rest));
+            return Ok((Compound { data: compound }, rest));
         }
 
         let (name, rest) = parse_string(rest)?;
         let (tag, rest) = parse_payload(tag_id, rest)?;
 
-        if compound.insert(name.clone(), tag).is_some() {
+        if compound
+            .iter()
+            .any(|(existing_name, _)| existing_name.eq(&name))
+        {
             return Err(ParseError::DuplicateTagName(name));
         }
+        compound.push((name, tag));
         data = rest;
     }
 }
@@ -236,7 +238,7 @@ fn parse_compound(mut data: &[u8]) -> Result<(HashMap<String, Tag>, &[u8])> {
 /// Parses a named NBT compound from a byte slice.
 ///
 /// Expects the input to be a named NBT Compound, with no leftover data.
-pub fn parse_nbt(data: &[u8]) -> Result<(String, HashMap<String, Tag>)> {
+pub fn parse_nbt(data: &[u8]) -> Result<(String, Compound)> {
     let (tag_id, data) = parse_tag_id(data)?;
     if tag_id != TagId::Compound {
         return Err(ParseError::NotNBT);

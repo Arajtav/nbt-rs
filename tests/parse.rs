@@ -1,4 +1,9 @@
-use nbt_rs::parser::parse_nbt;
+use std::collections::HashMap;
+
+use nbt_rs::{
+    parser::parse_nbt,
+    tags::{String, Tag},
+};
 
 #[test]
 fn test_parse_level_dat() {
@@ -12,10 +17,11 @@ fn test_parse_simple_compound() {
         0x0A, 0x00, 0x00, 0x01, 0x00, 0x01, b'a', 0x00, 0x01, 0x00, 0x01, b'b', 0x01, 0x00,
     ];
 
-    let root = parse_nbt(data).unwrap();
-    assert!(root.0.is_empty());
-    let a = *root.1.get("a").unwrap().as_byte().unwrap();
-    let b = *root.1.get("b").unwrap().as_byte().unwrap();
+    let (name, root) = parse_nbt(data).unwrap();
+    let root: HashMap<String, Tag> = root.into();
+    assert!(name.is_empty());
+    let a = *root.get("a").unwrap().as_byte().unwrap();
+    let b = *root.get("b").unwrap().as_byte().unwrap();
     assert_eq!(a, 0x00);
     assert_eq!(b, 0x01);
 }

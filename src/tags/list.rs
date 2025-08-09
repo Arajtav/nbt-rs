@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use enum_as_inner::EnumAsInner;
 
-use crate::tags::{Array, String, Tag};
+use crate::tags::{Array, Compound, String};
 
 /// An NBT List.
 ///
@@ -31,7 +29,7 @@ pub enum List {
     /// A `List` of NBT `List`s.
     List(Array<List>),
     /// A `List` of NBT Compounds.
-    Compound(Array<HashMap<String, Tag>>),
+    Compound(Array<Compound>),
     /// A `List` of NBT Int Arrays.
     IntArray(Array<Array<i32>>),
     /// A `List` of NBT Long Arrays.
