@@ -40,115 +40,120 @@ fn parse_tag_id(data: &[u8]) -> Result<(TagId, &[u8])> {
     Ok((tag_id, rest))
 }
 
-fn parse_byte(data: &[u8]) -> Result<(i8, &[u8])> {
+fn parse_byte(data: &[u8]) -> Result<(i8, &[u8], usize)> {
     let (&v, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
-    Ok((v as i8, rest))
+    Ok((v as i8, rest, 1))
 }
 
-fn parse_short(data: &[u8]) -> Result<(i16, &[u8])> {
+fn parse_short(data: &[u8]) -> Result<(i16, &[u8], usize)> {
     let (value, rest) = data
         .split_at_checked(2)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let value = i16::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
+    Ok((value, rest, 2))
 }
 
-fn parse_int(data: &[u8]) -> Result<(i32, &[u8])> {
+fn parse_int(data: &[u8]) -> Result<(i32, &[u8], usize)> {
     let (value, rest) = data
         .split_at_checked(4)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let value = i32::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
+    Ok((value, rest, 4))
 }
 
-fn parse_long(data: &[u8]) -> Result<(i64, &[u8])> {
+fn parse_long(data: &[u8]) -> Result<(i64, &[u8], usize)> {
     let (value, rest) = data
         .split_at_checked(8)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let value = i64::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
+    Ok((value, rest, 8))
 }
 
-fn parse_float(data: &[u8]) -> Result<(f32, &[u8])> {
+fn parse_float(data: &[u8]) -> Result<(f32, &[u8], usize)> {
     let (value, rest) = data
         .split_at_checked(4)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let value = f32::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
+    Ok((value, rest, 4))
 }
 
-fn parse_double(data: &[u8]) -> Result<(f64, &[u8])> {
+fn parse_double(data: &[u8]) -> Result<(f64, &[u8], usize)> {
     let (value, data) = data
         .split_at_checked(8)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let value = f64::from_be_bytes(value.try_into().unwrap());
-    Ok((value, data))
+    Ok((value, data, 8))
 }
 
-fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8])> {
-    let (len, data) = parse_int(data)?;
+fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8], usize)> {
+    let (len, data, _) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
     }
+    let len = len as usize;
 
     let (data, rest) = data
-        .split_at_checked(len as usize)
+        .split_at_checked(len)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     Ok((
         Array {
             items: cast_slice(data).into(),
         },
         rest,
+        len + 4,
     ))
 }
 
-fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
-    let (len, data) = parse_short(data)?;
+fn parse_string(data: &[u8]) -> Result<(String, &[u8], usize)> {
+    let (len, data, _) = parse_short(data)?;
+    let len = len as u16 as usize;
     let (data, rest) = data
-        .split_at_checked(len as u16 as usize)
+        .split_at_checked(len)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
 
     let data = std::string::String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
-    Ok((String { str: data }, rest))
+    Ok((String { str: data }, rest, len + 2))
 }
 
-fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
-    let (len, data) = parse_int(data)?;
+fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8], usize)> {
+    let (len, data, _) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
     }
+    let len = len as usize * 4;
 
     let (data, rest) = data
-        .split_at_checked(len as usize * 4)
+        .split_at_checked(len)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let data = data
         .chunks_exact(4)
         .map(|chunk| i32::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array { items: data }, rest))
+    Ok((Array { items: data }, rest, len + 4))
 }
 
-fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
-    let (len, data) = parse_int(data)?;
+fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8], usize)> {
+    let (len, data, _) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
     }
+    let len = len as usize * 8;
 
     let (data, rest) = data
-        .split_at_checked(len as usize * 8)
+        .split_at_checked(len)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     let data = data
         .chunks_exact(8)
         .map(|chunk| i64::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array { items: data }, rest))
+    Ok((Array { items: data }, rest, len + 4))
 }
 
-fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
+fn parse_list(data: &[u8]) -> Result<(List, &[u8], usize)> {
     let (tag_id, data) = parse_tag_id(data)?;
-    let (len, data) = parse_int(data)?;
+    let (len, data, _) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
     }
@@ -156,9 +161,11 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
     macro_rules! parse {
         ($parser:ident, $variant:ident) => {{
             let mut data = data;
+            let mut size = 5;
             let mut items = Vec::with_capacity(len as usize);
             for _ in 0..len {
-                let (item, rest) = $parser(data)?;
+                let (item, rest, tmp) = $parser(data)?;
+                size += tmp;
                 items.push(item);
                 data = rest;
             }
@@ -167,12 +174,13 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
                     items: items.into(),
                 }),
                 data,
+                size,
             )
         }};
     }
 
     Ok(match tag_id {
-        TagId::End => (List::End, data),
+        TagId::End => (List::End, data, 5),
         TagId::Byte => parse!(parse_byte, Byte),
         TagId::Short => parse!(parse_short, Short),
         TagId::Int => parse!(parse_int, Int),
@@ -188,15 +196,15 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
     })
 }
 
-fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
+fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8], usize)> {
     macro_rules! parse {
         ($variant:ident, $parser:expr) => {
-            $parser(data).map(|(v, rest)| (Tag::$variant(v), rest))
+            $parser(data).map(|(v, rest, size)| (Tag::$variant(v), rest, size))
         };
     }
 
     match tag_id {
-        TagId::End => Ok((Tag::End, data)),
+        TagId::End => Ok((Tag::End, data, 0)),
         TagId::Byte => parse!(Byte, parse_byte),
         TagId::Short => parse!(Short, parse_short),
         TagId::Int => parse!(Int, parse_int),
@@ -212,17 +220,28 @@ fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
     }
 }
 
-fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
+fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8], usize)> {
     let mut compound: Vec<(String, Tag)> = Vec::new();
+    let mut size: usize = 1; // end tag
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
         if tag_id == TagId::End {
-            return Ok((Compound { data: compound }, rest));
+            return Ok((
+                Compound {
+                    data: compound,
+                    size,
+                },
+                rest,
+                size,
+            ));
         }
 
-        let (name, rest) = parse_string(rest)?;
-        let (tag, rest) = parse_payload(tag_id, rest)?;
+        let (name, rest, tmp) = parse_string(rest)?;
+        size += tmp;
+        let (tag, rest, tmp) = parse_payload(tag_id, rest)?;
+        size += tmp;
+        size += 1; // tag id
 
         if compound
             .iter()
@@ -244,8 +263,8 @@ pub fn parse_nbt(data: &[u8]) -> Result<(String, Compound)> {
         return Err(ParseError::NotNBT);
     }
 
-    let (name, data) = parse_string(data)?;
-    let (tag, data) = parse_compound(data)?;
+    let (name, data, _) = parse_string(data)?;
+    let (tag, data, _) = parse_compound(data)?;
 
     if !data.is_empty() {
         Err(ParseError::LeftoverData(data.len()))

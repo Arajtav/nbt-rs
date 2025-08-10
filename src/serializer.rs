@@ -121,9 +121,11 @@ fn serialize_named_tag(name: &String, tag: &Tag, buffer: &mut Vec<u8>) {
 /// - `data`: The compound with data to serialize.
 pub fn serialize_nbt(name: &String, data: &Compound) -> Box<[u8]> {
     // would have just used serialize_named_tag, however i would need to clone for Tag::Compound()
-    let mut buffer = Vec::new();
+    let size = data.size + 3 + name.len();
+    let mut buffer = Vec::with_capacity(size);
     buffer.push(TagId::Compound as u8);
     serialize_string(name, &mut buffer);
     serialize_compound(data, &mut buffer);
+    debug_assert_eq!(buffer.len(), size);
     buffer.into_boxed_slice()
 }

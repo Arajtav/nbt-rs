@@ -8,6 +8,8 @@ use crate::tags::{String, Tag};
 #[derive(Debug, PartialEq)]
 pub struct Compound {
     pub(crate) data: Vec<(String, Tag)>,
+    /// Precomputed size of the payload, in bytes.
+    pub(crate) size: usize,
 }
 
 impl From<Compound> for Vec<(String, Tag)> {
@@ -24,7 +26,12 @@ impl From<Compound> for HashMap<String, Tag> {
 
 impl From<HashMap<String, Tag>> for Compound {
     fn from(map: HashMap<String, Tag>) -> Self {
-        let data = map.into_iter().collect();
-        Compound { data }
+        let data: Vec<(String, Tag)> = map.into_iter().collect();
+        let size: usize = data
+            .iter()
+            .map(|(name, tag)| (3 + name.len() + tag.size()))
+            .sum();
+        let size = size + 1; // end tag
+        Compound { data, size }
     }
 }

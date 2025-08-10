@@ -53,6 +53,22 @@ impl Tag {
             Tag::LongArray(_) => TagId::LongArray,
         }
     }
+
+    pub(crate) fn size(&self) -> usize {
+        match self {
+            Tag::End => 0,
+            Tag::Byte(_) => 1,
+            Tag::Short(_) => 2,
+            Tag::Int(_) | Tag::Float(_) => 4,
+            Tag::Long(_) | Tag::Double(_) => 8,
+            Tag::ByteArray(v) => 4 + v.len(),
+            Tag::String(v) => 2 + v.len(),
+            Tag::List(v) => v.size(),
+            Tag::Compound(v) => v.size,
+            Tag::IntArray(v) => 4 + v.len() * 4,
+            Tag::LongArray(v) => 4 + v.len() * 4,
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
