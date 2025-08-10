@@ -7,6 +7,7 @@ use crate::tags::{String, Tag};
 /// Ensures no items have duplicate keys.
 #[derive(Debug, PartialEq)]
 pub struct Compound {
+    // more efficient than a hashmap for how small nbt compounds are.
     pub(crate) data: Vec<(String, Tag)>,
 }
 
