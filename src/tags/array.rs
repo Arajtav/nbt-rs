@@ -7,7 +7,7 @@ use crate::tags::ValidationError;
 /// Contains a fixed number of items, up to `i32::MAX`.
 #[derive(Debug, PartialEq)]
 pub struct Array<T> {
-    pub(crate) items: Box<[T]>,
+    pub(crate) items: Vec<T>,
 }
 
 impl<T> TryFrom<Vec<T>> for Array<T> {
@@ -21,16 +21,14 @@ impl<T> TryFrom<Vec<T>> for Array<T> {
         if vec.len() > i32::MAX as usize {
             Err((ValidationError::ArrayTooLong(vec.len()), vec))
         } else {
-            Ok(Self {
-                items: vec.into_boxed_slice(),
-            })
+            Ok(Self { items: vec })
         }
     }
 }
 
 impl<T> From<Array<T>> for Vec<T> {
     fn from(array: Array<T>) -> Self {
-        array.items.into_vec()
+        array.items
     }
 }
 
