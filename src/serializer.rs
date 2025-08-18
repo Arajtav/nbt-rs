@@ -12,8 +12,7 @@ use crate::{
 /// - `name`: The name of the root tag. Typically an empty string.
 /// - `data`: The compound with data to serialize.
 pub fn serialize_nbt(name: &NbtString, data: &NbtCompound) -> Box<[u8]> {
-    // would have just used serialize_named_tag, however i would need to clone for Tag::Compound()
-    let mut buffer = Vec::new();
+    let mut buffer = Vec::with_capacity(data.size as usize + 3 + name.len());
     buffer.push(NbtTagId::Compound as u8);
     name.serialize_nbt_payload(&mut buffer);
     data.serialize_nbt_payload(&mut buffer);

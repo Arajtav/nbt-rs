@@ -190,11 +190,19 @@ fn parse_payload(tag_id: NbtTagId, data: &[u8]) -> Result<(NbtTag, &[u8])> {
 
 fn parse_compound(mut data: &[u8]) -> Result<(NbtCompound, &[u8])> {
     let mut compound: Vec<(NbtString, NbtTag)> = Vec::new();
+    let origin = data.as_ptr() as usize;
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
         if tag_id == NbtTagId::End {
-            return Ok((NbtCompound { data: compound }, rest));
+            let size = rest.as_ptr() as usize - origin;
+            return Ok((
+                NbtCompound {
+                    data: compound,
+                    size,
+                },
+                rest,
+            ));
         }
 
         let (name, rest) = parse_string(rest)?;

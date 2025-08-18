@@ -12,6 +12,7 @@ use crate::{
 #[derive(Debug, PartialEq, Clone, PartialOrd)]
 pub struct NbtCompound {
     pub(crate) data: Vec<(NbtString, NbtTag)>,
+    pub(crate) size: usize,
 }
 
 impl fmt::Display for NbtCompound {
@@ -54,6 +55,9 @@ impl From<NbtCompound> for HashMap<NbtString, NbtTag> {
 impl From<HashMap<NbtString, NbtTag>> for NbtCompound {
     fn from(map: HashMap<NbtString, NbtTag>) -> Self {
         let data = map.into_iter().collect();
-        NbtCompound { data }
+        NbtCompound {
+            data,
+            size: todo!(),
+        }
     }
 }
