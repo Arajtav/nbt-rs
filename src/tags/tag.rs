@@ -1,6 +1,9 @@
 use enum_as_inner::EnumAsInner;
 
-use crate::tags::{Array, Compound, List, String};
+use crate::{
+    serializer::NbtSerialize,
+    tags::{Array, Compound, List, String},
+};
 
 /// An NBT Tag.
 ///
@@ -91,6 +94,27 @@ impl TryFrom<u8> for TagId {
             11 => Ok(Self::IntArray),
             12 => Ok(Self::LongArray),
             _ => Err(()),
+        }
+    }
+}
+
+impl NbtSerialize for Tag {
+    #[inline(always)]
+    fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+        match self {
+            Tag::End => {}
+            Tag::Byte(data) => data.serialize_nbt_payload(buf),
+            Tag::Short(data) => data.serialize_nbt_payload(buf),
+            Tag::Int(data) => data.serialize_nbt_payload(buf),
+            Tag::Long(data) => data.serialize_nbt_payload(buf),
+            Tag::Float(data) => data.serialize_nbt_payload(buf),
+            Tag::Double(data) => data.serialize_nbt_payload(buf),
+            Tag::ByteArray(data) => data.serialize_nbt_payload(buf),
+            Tag::String(data) => data.serialize_nbt_payload(buf),
+            Tag::List(data) => data.serialize_nbt_payload(buf),
+            Tag::Compound(data) => data.serialize_nbt_payload(buf),
+            Tag::IntArray(data) => data.serialize_nbt_payload(buf),
+            Tag::LongArray(data) => data.serialize_nbt_payload(buf),
         }
     }
 }

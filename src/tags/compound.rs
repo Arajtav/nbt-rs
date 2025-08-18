@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::tags::{String, Tag};
+use crate::{
+    serializer::NbtSerialize,
+    tags::{String, Tag},
+};
 
 /// An NBT Compound.
 ///
@@ -8,6 +11,17 @@ use crate::tags::{String, Tag};
 #[derive(Debug, PartialEq)]
 pub struct Compound {
     pub(crate) data: Vec<(String, Tag)>,
+}
+
+impl NbtSerialize for Compound {
+    fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+        for (key, tag) in &self.data {
+            buf.push(tag.tag_id() as u8);
+            key.serialize_nbt_payload(buf);
+            tag.serialize_nbt_payload(buf);
+        }
+        buf.push(0x00);
+    }
 }
 
 impl From<Compound> for Vec<(String, Tag)> {

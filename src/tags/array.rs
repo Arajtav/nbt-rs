@@ -1,6 +1,8 @@
 use std::ops::Deref;
 
-use crate::tags::ValidationError;
+use bytemuck::cast_slice;
+
+use crate::{serializer::NbtSerialize, tags::ValidationError};
 
 /// An NBT Array.
 ///
@@ -39,3 +41,28 @@ impl<T> Deref for Array<T> {
         &self.items
     }
 }
+
+impl NbtSerialize for Array<i8> {
+    fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+        (self.len() as i32).serialize_nbt_payload(buf);
+        buf.extend_from_slice(cast_slice(&self.items));
+    }
+}
+
+macro_rules! impl_nbt_serialize_array {
+    ($ty:ty) => {
+        impl NbtSerialize for Array<$ty> {
+            fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+                (self.len() as i32).serialize_nbt_payload(buf);
+                for v in self.iter() {
+                    buf.extend_from_slice(&v.to_be_bytes());
+                }
+            }
+        }
+    };
+}
+
+impl_nbt_serialize_array!(i32);
+impl_nbt_serialize_array!(u32);
+impl_nbt_serialize_array!(i64);
+impl_nbt_serialize_array!(u64);

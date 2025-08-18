@@ -4,7 +4,7 @@ use std::{
     ops::Deref,
 };
 
-use crate::tags::ValidationError;
+use crate::{serializer::NbtSerialize, tags::ValidationError};
 
 /// An NBT String.
 ///
@@ -12,6 +12,14 @@ use crate::tags::ValidationError;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct String {
     pub(crate) str: std::string::String,
+}
+
+impl NbtSerialize for String {
+    fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+        let bytes = self.as_bytes();
+        (bytes.len() as u16).serialize_nbt_payload(buf);
+        buf.extend_from_slice(bytes);
+    }
 }
 
 impl Hash for String {
