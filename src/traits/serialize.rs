@@ -1,4 +1,9 @@
+/// Nbt Serialize Trait
+///
+/// A basic trait to serialize nbt payload.
+/// Implemented for all the types nbt uses.
 pub trait NbtSerialize {
+    /// Serializes the value, extending the `buf`.
     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>);
 }
 

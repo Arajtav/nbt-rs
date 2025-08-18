@@ -4,17 +4,17 @@ use std::{
     ops::Deref,
 };
 
-use crate::{serializer::NbtSerialize, tags::ValidationError};
+use crate::{error::ValidationError, traits::NbtSerialize};
 
 /// An NBT String.
 ///
 /// Wrapper around a `String`, limiting its length to `u16:MAX` bytes.
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct String {
-    pub(crate) str: std::string::String,
+pub struct NbtString {
+    pub(crate) str: String,
 }
 
-impl NbtSerialize for String {
+impl NbtSerialize for NbtString {
     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
         let bytes = self.as_bytes();
         (bytes.len() as u16).serialize_nbt_payload(buf);
@@ -22,20 +22,20 @@ impl NbtSerialize for String {
     }
 }
 
-impl Hash for String {
+impl Hash for NbtString {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.str.hash(state);
     }
 }
 
-impl TryFrom<std::string::String> for String {
-    type Error = (ValidationError, std::string::String);
+impl TryFrom<String> for NbtString {
+    type Error = (ValidationError, String);
 
-    /// Attempts to create a `String` from an `std::string::String`.
+    /// Attempts to create a `NbtString` from an `String`.
     ///
     /// # Errors
-    /// Returns an error if the `std::string::String` is longer than `u16::MAX`.
-    fn try_from(str: std::string::String) -> Result<Self, Self::Error> {
+    /// Returns an error if the `String` is longer than `u16::MAX`.
+    fn try_from(str: String) -> Result<Self, Self::Error> {
         if str.len() > u16::MAX as usize {
             Err((ValidationError::StringTooLong(str.len()), str))
         } else {
@@ -44,7 +44,7 @@ impl TryFrom<std::string::String> for String {
     }
 }
 
-impl Deref for String {
+impl Deref for NbtString {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -52,20 +52,20 @@ impl Deref for String {
     }
 }
 
-impl Borrow<str> for String {
+impl Borrow<str> for NbtString {
     fn borrow(&self) -> &str {
         &self.str
     }
 }
 
-impl PartialEq<str> for String {
+impl PartialEq<str> for NbtString {
     fn eq(&self, other: &str) -> bool {
         self.str == other
     }
 }
 
-impl PartialEq<String> for str {
-    fn eq(&self, other: &String) -> bool {
+impl PartialEq<NbtString> for str {
+    fn eq(&self, other: &NbtString) -> bool {
         self == other.str
     }
 }

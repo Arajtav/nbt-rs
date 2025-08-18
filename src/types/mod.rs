@@ -4,15 +4,13 @@
 
 mod array;
 mod compound;
-mod errors;
 mod list;
 mod string;
 mod tag;
 
-pub use array::Array;
-pub use compound::Compound;
-pub use errors::ValidationError;
-pub use list::List;
-pub use string::String;
-pub use tag::Tag;
-pub(crate) use tag::TagId;
+pub use array::NbtArray;
+pub use compound::NbtCompound;
+pub use list::NbtList;
+pub use string::NbtString;
+pub use tag::NbtTag;
+pub(crate) use tag::NbtTagId;

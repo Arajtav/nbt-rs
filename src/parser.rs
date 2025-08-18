@@ -1,42 +1,18 @@
 //! Functions for parsing NBT data.
 
 use bytemuck::cast_slice;
-use thiserror::Error;
 
-use crate::tags::{Array, Compound, List, String, Tag, TagId};
-
-/// Errors that can occur while parsing NBT data.
-#[derive(Debug, Error)]
-pub enum ParseError {
-    /// The encountered tag ID is not valid.
-    #[error("Invalid tag ID: {0}")]
-    InvalidTagId(u8),
-    /// The input ended before the parser finished.
-    #[error("Unexpected end of input")]
-    UnexpectedEndOfInput,
-    /// The string data is not valid UTF-8.
-    #[error("Invalid UTF-8 data")]
-    InvalidUtf8,
-    /// The encountered length of an `Array` or a `List` is negative.
-    #[error("Negative length encountered: {0}")]
-    NegativeLength(i32),
-    /// Extra bytes remaining after the parser finished.
-    #[error("Leftover data: {0} bytes")]
-    LeftoverData(usize),
-    /// A non-unique tag name was encountered.
-    #[error("Duplicate tag name")]
-    DuplicateTagName(String),
-    /// The data is not a valid NBT file.
-    #[error("Not an NBT file")]
-    NotNBT,
-}
+use crate::{
+    error::ParseError,
+    types::{NbtArray, NbtCompound, NbtList, NbtString, NbtTag, NbtTagId},
+};
 
 /// A shorthand for `Result<T, ParseError>`.
 pub type Result<T> = std::result::Result<T, ParseError>;
 
-fn parse_tag_id(data: &[u8]) -> Result<(TagId, &[u8])> {
+fn parse_tag_id(data: &[u8]) -> Result<(NbtTagId, &[u8])> {
     let (&tag_id, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
-    let tag_id = TagId::try_from(tag_id).map_err(|_| ParseError::InvalidTagId(tag_id))?;
+    let tag_id = NbtTagId::try_from(tag_id).map_err(|_| ParseError::InvalidTagId(tag_id))?;
     Ok((tag_id, rest))
 }
 
@@ -85,7 +61,7 @@ fn parse_double(data: &[u8]) -> Result<(f64, &[u8])> {
     Ok((value, data))
 }
 
-fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8])> {
+fn parse_byte_array(data: &[u8]) -> Result<(NbtArray<i8>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -95,24 +71,24 @@ fn parse_byte_array(data: &[u8]) -> Result<(Array<i8>, &[u8])> {
         .split_at_checked(len as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
     Ok((
-        Array {
+        NbtArray {
             items: cast_slice(data).into(),
         },
         rest,
     ))
 }
 
-fn parse_string(data: &[u8]) -> Result<(String, &[u8])> {
+fn parse_string(data: &[u8]) -> Result<(NbtString, &[u8])> {
     let (len, data) = parse_short(data)?;
     let (data, rest) = data
         .split_at_checked(len as u16 as usize)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
 
     let data = std::string::String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
-    Ok((String { str: data }, rest))
+    Ok((NbtString { str: data }, rest))
 }
 
-fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
+fn parse_int_array(data: &[u8]) -> Result<(NbtArray<i32>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -121,15 +97,15 @@ fn parse_int_array(data: &[u8]) -> Result<(Array<i32>, &[u8])> {
     let (data, rest) = data
         .split_at_checked(len as usize * 4)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let data = data
+    let items = data
         .chunks_exact(4)
         .map(|chunk| i32::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array { items: data }, rest))
+    Ok((NbtArray { items }, rest))
 }
 
-fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
+fn parse_long_array(data: &[u8]) -> Result<(NbtArray<i64>, &[u8])> {
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -138,15 +114,15 @@ fn parse_long_array(data: &[u8]) -> Result<(Array<i64>, &[u8])> {
     let (data, rest) = data
         .split_at_checked(len as usize * 8)
         .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let data = data
+    let items = data
         .chunks_exact(8)
         .map(|chunk| i64::from_be_bytes(chunk.try_into().unwrap()))
         .collect();
 
-    Ok((Array { items: data }, rest))
+    Ok((NbtArray { items }, rest))
 }
 
-fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
+fn parse_list(data: &[u8]) -> Result<(NbtList, &[u8])> {
     let (tag_id, data) = parse_tag_id(data)?;
     let (len, data) = parse_int(data)?;
     if len < 0 {
@@ -163,7 +139,7 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
                 data = rest;
             }
             (
-                List::$variant(Array {
+                NbtList::$variant(NbtArray {
                     items: items.into(),
                 }),
                 data,
@@ -172,53 +148,53 @@ fn parse_list(data: &[u8]) -> Result<(List, &[u8])> {
     }
 
     Ok(match tag_id {
-        TagId::End => (List::End, data),
-        TagId::Byte => parse!(parse_byte, Byte),
-        TagId::Short => parse!(parse_short, Short),
-        TagId::Int => parse!(parse_int, Int),
-        TagId::Long => parse!(parse_long, Long),
-        TagId::Float => parse!(parse_float, Float),
-        TagId::Double => parse!(parse_double, Double),
-        TagId::ByteArray => parse!(parse_byte_array, ByteArray),
-        TagId::String => parse!(parse_string, String),
-        TagId::List => parse!(parse_list, List),
-        TagId::Compound => parse!(parse_compound, Compound),
-        TagId::IntArray => parse!(parse_int_array, IntArray),
-        TagId::LongArray => parse!(parse_long_array, LongArray),
+        NbtTagId::End => (NbtList::End, data),
+        NbtTagId::Byte => parse!(parse_byte, Byte),
+        NbtTagId::Short => parse!(parse_short, Short),
+        NbtTagId::Int => parse!(parse_int, Int),
+        NbtTagId::Long => parse!(parse_long, Long),
+        NbtTagId::Float => parse!(parse_float, Float),
+        NbtTagId::Double => parse!(parse_double, Double),
+        NbtTagId::ByteArray => parse!(parse_byte_array, ByteArray),
+        NbtTagId::String => parse!(parse_string, String),
+        NbtTagId::List => parse!(parse_list, List),
+        NbtTagId::Compound => parse!(parse_compound, Compound),
+        NbtTagId::IntArray => parse!(parse_int_array, IntArray),
+        NbtTagId::LongArray => parse!(parse_long_array, LongArray),
     })
 }
 
-fn parse_payload(tag_id: TagId, data: &[u8]) -> Result<(Tag, &[u8])> {
+fn parse_payload(tag_id: NbtTagId, data: &[u8]) -> Result<(NbtTag, &[u8])> {
     macro_rules! parse {
         ($variant:ident, $parser:expr) => {
-            $parser(data).map(|(v, rest)| (Tag::$variant(v), rest))
+            $parser(data).map(|(v, rest)| (NbtTag::$variant(v), rest))
         };
     }
 
     match tag_id {
-        TagId::End => Ok((Tag::End, data)),
-        TagId::Byte => parse!(Byte, parse_byte),
-        TagId::Short => parse!(Short, parse_short),
-        TagId::Int => parse!(Int, parse_int),
-        TagId::Long => parse!(Long, parse_long),
-        TagId::Float => parse!(Float, parse_float),
-        TagId::Double => parse!(Double, parse_double),
-        TagId::ByteArray => parse!(ByteArray, parse_byte_array),
-        TagId::String => parse!(String, parse_string),
-        TagId::List => parse!(List, parse_list),
-        TagId::Compound => parse!(Compound, parse_compound),
-        TagId::IntArray => parse!(IntArray, parse_int_array),
-        TagId::LongArray => parse!(LongArray, parse_long_array),
+        NbtTagId::End => Ok((NbtTag::End, data)),
+        NbtTagId::Byte => parse!(Byte, parse_byte),
+        NbtTagId::Short => parse!(Short, parse_short),
+        NbtTagId::Int => parse!(Int, parse_int),
+        NbtTagId::Long => parse!(Long, parse_long),
+        NbtTagId::Float => parse!(Float, parse_float),
+        NbtTagId::Double => parse!(Double, parse_double),
+        NbtTagId::ByteArray => parse!(ByteArray, parse_byte_array),
+        NbtTagId::String => parse!(String, parse_string),
+        NbtTagId::List => parse!(List, parse_list),
+        NbtTagId::Compound => parse!(Compound, parse_compound),
+        NbtTagId::IntArray => parse!(IntArray, parse_int_array),
+        NbtTagId::LongArray => parse!(LongArray, parse_long_array),
     }
 }
 
-fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
-    let mut compound: Vec<(String, Tag)> = Vec::new();
+fn parse_compound(mut data: &[u8]) -> Result<(NbtCompound, &[u8])> {
+    let mut compound: Vec<(NbtString, NbtTag)> = Vec::new();
 
     loop {
         let (tag_id, rest) = parse_tag_id(data)?;
-        if tag_id == TagId::End {
-            return Ok((Compound { data: compound }, rest));
+        if tag_id == NbtTagId::End {
+            return Ok((NbtCompound { data: compound }, rest));
         }
 
         let (name, rest) = parse_string(rest)?;
@@ -238,9 +214,9 @@ fn parse_compound(mut data: &[u8]) -> Result<(Compound, &[u8])> {
 /// Parses a named NBT compound from a byte slice.
 ///
 /// Expects the input to be a named NBT Compound, with no leftover data.
-pub fn parse_nbt(data: &[u8]) -> Result<(String, Compound)> {
+pub fn parse_nbt(data: &[u8]) -> Result<(NbtString, NbtCompound)> {
     let (tag_id, data) = parse_tag_id(data)?;
-    if tag_id != TagId::Compound {
+    if tag_id != NbtTagId::Compound {
         return Err(ParseError::NotNBT);
     }
 

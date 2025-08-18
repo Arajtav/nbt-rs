@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use nbt_rs::{
-    parser::parse_nbt,
-    tags::{String, Tag},
+    parse_nbt,
+    types::{NbtString, NbtTag},
 };
 
 #[test]
@@ -18,7 +18,7 @@ fn test_parse_simple_compound() {
     ];
 
     let (name, root) = parse_nbt(data).unwrap();
-    let root: HashMap<String, Tag> = root.into();
+    let root: HashMap<NbtString, NbtTag> = root.into();
     assert!(name.is_empty());
     let a = *root.get("a").unwrap().as_byte().unwrap();
     let b = *root.get("b").unwrap().as_byte().unwrap();

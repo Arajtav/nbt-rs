@@ -1,19 +1,19 @@
 use std::collections::HashMap;
 
 use crate::{
-    serializer::NbtSerialize,
-    tags::{String, Tag},
+    traits::NbtSerialize,
+    types::{NbtString, NbtTag},
 };
 
 /// An NBT Compound.
 ///
 /// Ensures no items have duplicate keys.
 #[derive(Debug, PartialEq)]
-pub struct Compound {
-    pub(crate) data: Vec<(String, Tag)>,
+pub struct NbtCompound {
+    pub(crate) data: Vec<(NbtString, NbtTag)>,
 }
 
-impl NbtSerialize for Compound {
+impl NbtSerialize for NbtCompound {
     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
         for (key, tag) in &self.data {
             buf.push(tag.tag_id() as u8);
@@ -24,21 +24,21 @@ impl NbtSerialize for Compound {
     }
 }
 
-impl From<Compound> for Vec<(String, Tag)> {
-    fn from(val: Compound) -> Self {
+impl From<NbtCompound> for Vec<(NbtString, NbtTag)> {
+    fn from(val: NbtCompound) -> Self {
         val.data
     }
 }
 
-impl From<Compound> for HashMap<String, Tag> {
-    fn from(val: Compound) -> Self {
+impl From<NbtCompound> for HashMap<NbtString, NbtTag> {
+    fn from(val: NbtCompound) -> Self {
         val.data.into_iter().collect()
     }
 }
 
-impl From<HashMap<String, Tag>> for Compound {
-    fn from(map: HashMap<String, Tag>) -> Self {
+impl From<HashMap<NbtString, NbtTag>> for NbtCompound {
+    fn from(map: HashMap<NbtString, NbtTag>) -> Self {
         let data = map.into_iter().collect();
-        Compound { data }
+        NbtCompound { data }
     }
 }

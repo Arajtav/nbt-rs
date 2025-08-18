@@ -3,6 +3,11 @@
 
 // Based on https://minecraft.wiki/w/NBT_format#Binary_format
 
+pub mod error;
 pub mod parser;
 pub mod serializer;
-pub mod tags;
+pub mod traits;
+pub mod types;
+
+pub use parser::parse_nbt;
+pub use serializer::serialize_nbt;
