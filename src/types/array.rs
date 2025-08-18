@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{fmt, ops::Deref};
 
 use bytemuck::cast_slice;
 
@@ -7,9 +7,37 @@ use crate::{error::ValidationError, traits::NbtSerialize};
 /// An NBT Array.
 ///
 /// Contains a fixed number of items, up to `i32::MAX`.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Hash)]
 pub struct NbtArray<T> {
     pub(crate) items: Vec<T>,
+}
+
+impl<T: Eq> Eq for NbtArray<T> {}
+
+impl<T: PartialOrd> PartialOrd for NbtArray<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.items.partial_cmp(&other.items)
+    }
+}
+
+impl<T: Ord> Ord for NbtArray<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.items.cmp(&other.items)
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for NbtArray<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "[{}]",
+            self.items
+                .iter()
+                .map(|e| e.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
 }
 
 impl<T> TryFrom<Vec<T>> for NbtArray<T> {

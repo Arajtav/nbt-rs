@@ -1,3 +1,4 @@
+use core::fmt;
 use std::collections::HashMap;
 
 use crate::{
@@ -8,9 +9,23 @@ use crate::{
 /// An NBT Compound.
 ///
 /// Ensures no items have duplicate keys.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
 pub struct NbtCompound {
     pub(crate) data: Vec<(NbtString, NbtTag)>,
+}
+
+impl fmt::Display for NbtCompound {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{{{}}}",
+            self.data
+                .iter()
+                .map(|(k, v)| format!("{:?}: {}", k.to_string(), v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
 }
 
 impl NbtSerialize for NbtCompound {

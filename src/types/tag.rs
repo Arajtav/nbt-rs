@@ -1,3 +1,5 @@
+use core::fmt;
+
 use enum_as_inner::EnumAsInner;
 
 use crate::{
@@ -8,7 +10,7 @@ use crate::{
 /// An NBT Tag.
 ///
 /// Represents all defined NBT tags.
-#[derive(Debug, EnumAsInner, PartialEq)]
+#[derive(Debug, EnumAsInner, PartialEq, PartialOrd, Clone)]
 pub enum NbtTag {
     /// An empty tag.
     End,
@@ -36,6 +38,26 @@ pub enum NbtTag {
     IntArray(NbtArray<i32>),
     /// An NBT `Array` of signed 8-byte integer.
     LongArray(NbtArray<i64>),
+}
+
+impl fmt::Display for NbtTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NbtTag::End => write!(f, "END"),
+            NbtTag::Byte(v) => write!(f, "{v}b"),
+            NbtTag::Short(v) => write!(f, "{v}s"),
+            NbtTag::Int(v) => write!(f, "{v}"),
+            NbtTag::Long(v) => write!(f, "{v}l"),
+            NbtTag::Float(v) => write!(f, "{v}f"),
+            NbtTag::Double(v) => write!(f, "{v}d"),
+            NbtTag::ByteArray(v) => write!(f, "[B; {v}]"),
+            NbtTag::String(v) => write!(f, "{:?}", v.to_string()),
+            NbtTag::List(v) => write!(f, "{v}"),
+            NbtTag::Compound(v) => write!(f, "{v}"),
+            NbtTag::IntArray(v) => write!(f, "[I; {v}]"),
+            NbtTag::LongArray(v) => write!(f, "[L; {v}]"),
+        }
+    }
 }
 
 impl NbtTag {

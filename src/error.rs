@@ -5,7 +5,7 @@ use thiserror::Error;
 use crate::types::NbtString;
 
 /// Errors that can occur while parsing NBT data.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ParseError {
     /// The encountered tag ID is not valid.
     #[error("Invalid tag ID: {0}")]

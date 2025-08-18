@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     borrow::Borrow,
     hash::{Hash, Hasher},
@@ -9,9 +10,15 @@ use crate::{error::ValidationError, traits::NbtSerialize};
 /// An NBT String.
 ///
 /// Wrapper around a `String`, limiting its length to `u16:MAX` bytes.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct NbtString {
     pub(crate) str: String,
+}
+
+impl fmt::Display for NbtString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.str)
+    }
 }
 
 impl NbtSerialize for NbtString {

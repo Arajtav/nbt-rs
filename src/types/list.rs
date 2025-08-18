@@ -1,3 +1,5 @@
+use core::fmt;
+
 use enum_as_inner::EnumAsInner;
 
 use crate::{
@@ -9,7 +11,7 @@ use crate::{
 ///
 /// Represents all possible NBT lists.
 /// Uses NBT `Array` underneath as it is the same thing really.
-#[derive(Debug, EnumAsInner, PartialEq)]
+#[derive(Debug, EnumAsInner, PartialEq, PartialOrd, Clone)]
 pub enum NbtList {
     /// An empty `List` with no type.
     End,
@@ -37,6 +39,26 @@ pub enum NbtList {
     IntArray(NbtArray<NbtArray<i32>>),
     /// A `List` of NBT Long Arrays.
     LongArray(NbtArray<NbtArray<i64>>),
+}
+
+impl fmt::Display for NbtList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NbtList::End => write!(f, "End"),
+            NbtList::Byte(arr) => write!(f, "Byte({arr})"),
+            NbtList::Short(arr) => write!(f, "Short({arr})"),
+            NbtList::Int(arr) => write!(f, "Int({arr})"),
+            NbtList::Long(arr) => write!(f, "Long({arr})"),
+            NbtList::Float(arr) => write!(f, "Float({arr})"),
+            NbtList::Double(arr) => write!(f, "Double({arr})"),
+            NbtList::ByteArray(arr) => write!(f, "ByteArray({arr})"),
+            NbtList::String(arr) => write!(f, "String({arr})"),
+            NbtList::List(arr) => write!(f, "List({arr})"),
+            NbtList::Compound(arr) => write!(f, "Compound({arr})"),
+            NbtList::IntArray(arr) => write!(f, "IntArray({arr})"),
+            NbtList::LongArray(arr) => write!(f, "LongArray({arr})"),
+        }
+    }
 }
 
 impl NbtSerialize for NbtList {
