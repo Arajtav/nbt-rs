@@ -10,56 +10,57 @@ use crate::{
 /// A shorthand for `Result<T, ParseError>`.
 pub type Result<T> = std::result::Result<T, ParseError>;
 
+#[inline(always)]
+fn split_1(mut data: &[u8]) -> Result<(u8, &[u8])> {
+    let &a = data
+        .split_off_first()
+        .ok_or(ParseError::UnexpectedEndOfInput)?;
+    Ok((a, data))
+}
+
+macro_rules! impl_splt {
+    ($name:ident, $width:expr) => {
+        #[inline(always)]
+        fn $name(data: &[u8]) -> Result<([u8; $width], &[u8])> {
+            let (&a, data) = data
+                .split_first_chunk::<$width>()
+                .ok_or(ParseError::UnexpectedEndOfInput)?;
+            Ok((a, data))
+        }
+    };
+}
+
+impl_splt!(split_2, 2);
+impl_splt!(split_4, 4);
+impl_splt!(split_8, 8);
+
 fn parse_tag_id(data: &[u8]) -> Result<(NbtTagId, &[u8])> {
-    let (&tag_id, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
+    let (tag_id, rest) = split_1(data)?;
     let tag_id = NbtTagId::try_from(tag_id).map_err(|_| ParseError::InvalidTagId(tag_id))?;
     Ok((tag_id, rest))
 }
 
+#[inline(always)]
 fn parse_byte(data: &[u8]) -> Result<(i8, &[u8])> {
-    let (&v, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
+    let (v, rest) = split_1(data)?;
     Ok((v as i8, rest))
 }
 
-fn parse_short(data: &[u8]) -> Result<(i16, &[u8])> {
-    let (value, rest) = data
-        .split_at_checked(2)
-        .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let value = i16::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
+macro_rules! impl_parse_numeric {
+    ($name:ident, $ty:ty, $split:ident) => {
+        #[inline(always)]
+        fn $name(data: &[u8]) -> Result<($ty, &[u8])> {
+            let (bytes, rest) = $split(data)?;
+            Ok((<$ty>::from_be_bytes(bytes), rest))
+        }
+    };
 }
 
-fn parse_int(data: &[u8]) -> Result<(i32, &[u8])> {
-    let (value, rest) = data
-        .split_at_checked(4)
-        .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let value = i32::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
-}
-
-fn parse_long(data: &[u8]) -> Result<(i64, &[u8])> {
-    let (value, rest) = data
-        .split_at_checked(8)
-        .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let value = i64::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
-}
-
-fn parse_float(data: &[u8]) -> Result<(f32, &[u8])> {
-    let (value, rest) = data
-        .split_at_checked(4)
-        .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let value = f32::from_be_bytes(value.try_into().unwrap());
-    Ok((value, rest))
-}
-
-fn parse_double(data: &[u8]) -> Result<(f64, &[u8])> {
-    let (value, data) = data
-        .split_at_checked(8)
-        .ok_or(ParseError::UnexpectedEndOfInput)?;
-    let value = f64::from_be_bytes(value.try_into().unwrap());
-    Ok((value, data))
-}
+impl_parse_numeric!(parse_short, i16, split_2);
+impl_parse_numeric!(parse_int, i32, split_4);
+impl_parse_numeric!(parse_long, i64, split_8);
+impl_parse_numeric!(parse_float, f32, split_4);
+impl_parse_numeric!(parse_double, f64, split_8);
 
 fn parse_byte_array(data: &[u8]) -> Result<(NbtArray<i8>, &[u8])> {
     let (len, data) = parse_int(data)?;
