@@ -3,6 +3,7 @@ use core::fmt;
 use enum_as_inner::EnumAsInner;
 
 use crate::{
+    error::ParseError,
     traits::NbtSerialize,
     types::{NbtArray, NbtCompound, NbtList, NbtString},
 };
@@ -99,7 +100,7 @@ pub(crate) enum NbtTagId {
 }
 
 impl TryFrom<u8> for NbtTagId {
-    type Error = ();
+    type Error = ParseError;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::End),
@@ -115,7 +116,7 @@ impl TryFrom<u8> for NbtTagId {
             10 => Ok(Self::Compound),
             11 => Ok(Self::IntArray),
             12 => Ok(Self::LongArray),
-            _ => Err(()),
+            _ => Err(ParseError::InvalidTagId(value)),
         }
     }
 }

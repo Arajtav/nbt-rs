@@ -23,7 +23,7 @@ pub enum ParseError {
     #[error("Leftover data: {0} bytes")]
     LeftoverData(usize),
     /// A non-unique tag name was encountered.
-    #[error("Duplicate tag name")]
+    #[error("Duplicate tag name: {0:?}")]
     DuplicateTagName(NbtString),
     /// The data is not a valid NBT file.
     #[error("Not an NBT file")]
