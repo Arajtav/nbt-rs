@@ -124,6 +124,18 @@ fn parse_long_array(data: &[u8]) -> Result<(NbtArray<i64>, &[u8])> {
 
 fn parse_list(data: &[u8]) -> Result<(NbtList, &[u8])> {
     let (tag_id, data) = parse_tag_id(data)?;
+    match tag_id {
+        NbtTagId::Byte => {
+            return parse_byte_array(data).map(|p| (NbtList::Byte(p.0), p.1));
+        }
+        NbtTagId::Int => {
+            return parse_int_array(data).map(|p| (NbtList::Int(p.0), p.1));
+        }
+        NbtTagId::Long => {
+            return parse_long_array(data).map(|p| (NbtList::Long(p.0), p.1));
+        }
+        _ => {}
+    }
     let (len, data) = parse_int(data)?;
     if len < 0 {
         return Err(ParseError::NegativeLength(len));
@@ -149,10 +161,7 @@ fn parse_list(data: &[u8]) -> Result<(NbtList, &[u8])> {
 
     Ok(match tag_id {
         NbtTagId::End => (NbtList::End, data),
-        NbtTagId::Byte => parse!(parse_byte, Byte),
         NbtTagId::Short => parse!(parse_short, Short),
-        NbtTagId::Int => parse!(parse_int, Int),
-        NbtTagId::Long => parse!(parse_long, Long),
         NbtTagId::Float => parse!(parse_float, Float),
         NbtTagId::Double => parse!(parse_double, Double),
         NbtTagId::ByteArray => parse!(parse_byte_array, ByteArray),
@@ -161,6 +170,7 @@ fn parse_list(data: &[u8]) -> Result<(NbtList, &[u8])> {
         NbtTagId::Compound => parse!(parse_compound, Compound),
         NbtTagId::IntArray => parse!(parse_int_array, IntArray),
         NbtTagId::LongArray => parse!(parse_long_array, LongArray),
+        NbtTagId::Byte | NbtTagId::Int | NbtTagId::Long => unreachable!(),
     })
 }
 
