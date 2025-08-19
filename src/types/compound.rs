@@ -14,6 +14,13 @@ pub struct NbtCompound {
     pub(crate) data: Vec<(NbtString, NbtTag)>,
 }
 
+impl NbtCompound {
+    /// Gets an element by name.
+    pub fn get(&self, str: &str) -> Option<&NbtTag> {
+        self.data.iter().find(|e| e.0 == str).map(|e| &e.1)
+    }
+}
+
 impl fmt::Display for NbtCompound {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
