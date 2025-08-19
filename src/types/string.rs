@@ -76,3 +76,15 @@ impl PartialEq<NbtString> for str {
         self == other.str
     }
 }
+
+impl PartialEq<&str> for NbtString {
+    fn eq(&self, other: &&str) -> bool {
+        self.str == *other
+    }
+}
+
+impl PartialEq<NbtString> for &str {
+    fn eq(&self, other: &NbtString) -> bool {
+        *self == other.str
+    }
+}
