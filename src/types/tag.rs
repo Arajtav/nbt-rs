@@ -3,7 +3,8 @@ use core::fmt;
 use enum_as_inner::EnumAsInner;
 
 use crate::{
-    traits::NbtSerialize,
+    error::ParseError,
+    traits::{NbtParse, NbtSerialize},
     types::{NbtArray, NbtCompound, NbtList, NbtString},
 };
 
@@ -138,5 +139,13 @@ impl NbtSerialize for NbtTag {
             NbtTag::IntArray(data) => data.serialize_nbt_payload(buf),
             NbtTag::LongArray(data) => data.serialize_nbt_payload(buf),
         }
+    }
+}
+
+impl NbtParse for NbtTagId {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (&tag_id, rest) = data.split_first().ok_or(ParseError::UnexpectedEndOfInput)?;
+        let tag_id = NbtTagId::try_from(tag_id).map_err(|_| ParseError::InvalidTagId(tag_id))?;
+        Ok((tag_id, rest))
     }
 }

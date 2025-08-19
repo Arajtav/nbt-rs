@@ -3,7 +3,8 @@ use core::fmt;
 use enum_as_inner::EnumAsInner;
 
 use crate::{
-    traits::NbtSerialize,
+    error::ParseError,
+    traits::{NbtParse, NbtSerialize},
     types::{NbtArray, NbtCompound, NbtString, tag::NbtTagId},
 };
 
@@ -78,10 +79,19 @@ impl NbtSerialize for NbtList {
                 // type and length must be 0
                 buf.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00]);
             }
-            NbtList::Byte(data) => serialize!(data, Byte),
+            NbtList::Byte(data) => {
+                buf.push(NbtTagId::Byte as u8);
+                data.serialize_nbt_payload(buf);
+            }
             NbtList::Short(data) => serialize!(data, Short),
-            NbtList::Int(data) => serialize!(data, Int),
-            NbtList::Long(data) => serialize!(data, Long),
+            NbtList::Int(data) => {
+                buf.push(NbtTagId::Int as u8);
+                data.serialize_nbt_payload(buf);
+            }
+            NbtList::Long(data) => {
+                buf.push(NbtTagId::Long as u8);
+                data.serialize_nbt_payload(buf);
+            }
             NbtList::Float(data) => serialize!(data, Float),
             NbtList::Double(data) => serialize!(data, Double),
             NbtList::ByteArray(data) => serialize!(data, ByteArray),
@@ -91,5 +101,60 @@ impl NbtSerialize for NbtList {
             NbtList::IntArray(data) => serialize!(data, IntArray),
             NbtList::LongArray(data) => serialize!(data, LongArray),
         }
+    }
+}
+
+impl NbtParse for NbtList {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (tag_id, data) = NbtTagId::try_parse_nbt_payload(data)?;
+        // that kinda makes the code way uglier, however i am almost sure reusing those methods improves caching
+        match tag_id {
+            NbtTagId::Byte => {
+                return <NbtArray<i8>>::try_parse_nbt_payload(data)
+                    .map(|e| (NbtList::Byte(e.0), e.1));
+            }
+            NbtTagId::Int => {
+                return <NbtArray<i32>>::try_parse_nbt_payload(data)
+                    .map(|e| (NbtList::Int(e.0), e.1));
+            }
+            NbtTagId::Long => {
+                return <NbtArray<i64>>::try_parse_nbt_payload(data)
+                    .map(|e| (NbtList::Long(e.0), e.1));
+            }
+            _ => {}
+        }
+        let (len, data) = i32::try_parse_nbt_payload(data)?;
+        if len < 0 {
+            return Err(ParseError::NegativeLength(len));
+        }
+
+        macro_rules! parse {
+            ($type:ty, $variant:ident) => {{
+                let mut data = data;
+                let mut items = Vec::with_capacity(len as usize);
+                for _ in 0..len {
+                    let (item, rest) = <$type>::try_parse_nbt_payload(data)?;
+                    items.push(item);
+                    data = rest;
+                }
+                (NbtList::$variant(NbtArray { items: items }), data)
+            }};
+        }
+
+        Ok(match tag_id {
+            NbtTagId::End => (NbtList::End, data),
+            NbtTagId::Byte => unreachable!(),
+            NbtTagId::Short => parse!(i16, Short),
+            NbtTagId::Int => unreachable!(),
+            NbtTagId::Long => unreachable!(),
+            NbtTagId::Float => parse!(f32, Float),
+            NbtTagId::Double => parse!(f64, Double),
+            NbtTagId::ByteArray => parse!(NbtArray<i8>, ByteArray),
+            NbtTagId::String => parse!(NbtString, String),
+            NbtTagId::List => parse!(NbtList, List),
+            NbtTagId::Compound => parse!(NbtCompound, Compound),
+            NbtTagId::IntArray => parse!(NbtArray<i32>, IntArray),
+            NbtTagId::LongArray => parse!(NbtArray<i64>, LongArray),
+        })
     }
 }

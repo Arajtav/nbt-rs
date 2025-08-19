@@ -2,7 +2,10 @@ use std::{fmt, ops::Deref};
 
 use bytemuck::cast_slice;
 
-use crate::{error::ValidationError, traits::NbtSerialize};
+use crate::{
+    error::{ParseError, ValidationError},
+    traits::{NbtParse, NbtSerialize},
+};
 
 /// An NBT Array.
 ///
@@ -91,6 +94,62 @@ macro_rules! impl_nbt_serialize_array {
 }
 
 impl_nbt_serialize_array!(i32);
-impl_nbt_serialize_array!(u32);
+// impl_nbt_serialize_array!(u32);
 impl_nbt_serialize_array!(i64);
-impl_nbt_serialize_array!(u64);
+// impl_nbt_serialize_array!(u64);
+
+impl NbtParse for NbtArray<i8> {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (len, data) = i32::try_parse_nbt_payload(data)?;
+        if len < 0 {
+            return Err(ParseError::NegativeLength(len));
+        }
+
+        let (data, rest) = data
+            .split_at_checked(len as usize)
+            .ok_or(ParseError::UnexpectedEndOfInput)?;
+        Ok((
+            NbtArray {
+                items: cast_slice(data).into(),
+            },
+            rest,
+        ))
+    }
+}
+impl NbtParse for NbtArray<i32> {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (len, data) = i32::try_parse_nbt_payload(data)?;
+        if len < 0 {
+            return Err(ParseError::NegativeLength(len));
+        }
+
+        let (data, rest) = data
+            .split_at_checked(len as usize * 4)
+            .ok_or(ParseError::UnexpectedEndOfInput)?;
+        let items = data
+            .chunks_exact(4)
+            .map(|chunk| i32::from_be_bytes(chunk.try_into().unwrap()))
+            .collect();
+
+        Ok((NbtArray { items }, rest))
+    }
+}
+
+impl NbtParse for NbtArray<i64> {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (len, data) = i32::try_parse_nbt_payload(data)?;
+        if len < 0 {
+            return Err(ParseError::NegativeLength(len));
+        }
+
+        let (data, rest) = data
+            .split_at_checked(len as usize * 8)
+            .ok_or(ParseError::UnexpectedEndOfInput)?;
+        let items = data
+            .chunks_exact(8)
+            .map(|chunk| i64::from_be_bytes(chunk.try_into().unwrap()))
+            .collect();
+
+        Ok((NbtArray { items }, rest))
+    }
+}

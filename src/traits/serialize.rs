@@ -30,10 +30,10 @@ macro_rules! impl_nbt_serialize_numeric {
 }
 
 impl_nbt_serialize_numeric!(i16);
-impl_nbt_serialize_numeric!(u16);
+// impl_nbt_serialize_numeric!(u16);
 impl_nbt_serialize_numeric!(i32);
-impl_nbt_serialize_numeric!(u32);
+// impl_nbt_serialize_numeric!(u32);
 impl_nbt_serialize_numeric!(i64);
-impl_nbt_serialize_numeric!(u64);
+// impl_nbt_serialize_numeric!(u64);
 impl_nbt_serialize_numeric!(f32);
 impl_nbt_serialize_numeric!(f64);

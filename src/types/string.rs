@@ -5,7 +5,10 @@ use std::{
     ops::Deref,
 };
 
-use crate::{error::ValidationError, traits::NbtSerialize};
+use crate::{
+    error::{ParseError, ValidationError},
+    traits::{NbtParse, NbtSerialize},
+};
 
 /// An NBT String.
 ///
@@ -24,7 +27,7 @@ impl fmt::Display for NbtString {
 impl NbtSerialize for NbtString {
     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
         let bytes = self.as_bytes();
-        (bytes.len() as u16).serialize_nbt_payload(buf);
+        (bytes.len() as u16 as i16).serialize_nbt_payload(buf);
         buf.extend_from_slice(bytes);
     }
 }
@@ -38,7 +41,7 @@ impl Hash for NbtString {
 impl TryFrom<String> for NbtString {
     type Error = (ValidationError, String);
 
-    /// Attempts to create a `NbtString` from an `String`.
+    /// Attempts to create an `NbtString` from a `String`.
     ///
     /// # Errors
     /// Returns an error if the `String` is longer than `u16::MAX`.
@@ -74,5 +77,18 @@ impl PartialEq<str> for NbtString {
 impl PartialEq<NbtString> for str {
     fn eq(&self, other: &NbtString) -> bool {
         self == other.str
+    }
+}
+
+impl NbtParse for NbtString {
+    fn try_parse_nbt_payload(data: &[u8]) -> Result<(Self, &[u8]), ParseError> {
+        let (len, data) = i16::try_parse_nbt_payload(data)?;
+        let (data, rest) = data
+            .split_at_checked(len as u16 as usize)
+            .ok_or(ParseError::UnexpectedEndOfInput)?;
+
+        let data =
+            std::string::String::from_utf8(data.into()).map_err(|_| ParseError::InvalidUtf8)?;
+        Ok((NbtString { str: data }, rest))
     }
 }
