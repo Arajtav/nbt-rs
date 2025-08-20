@@ -4,6 +4,7 @@
 // Based on https://minecraft.wiki/w/NBT_format#Binary_format
 
 pub mod error;
+pub mod macros;
 pub mod parser;
 pub mod serializer;
 pub mod traits;
