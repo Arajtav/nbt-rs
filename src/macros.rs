@@ -4,26 +4,27 @@
 ///
 /// # Parameters
 /// - `input`: The `NbtCompound` (or a reference to one) from which to retrieve the field.
-/// - `field`: The name of the field to retrieve, as a `&str`.
+/// - `field`: One or more field names as string literals (e.g. `"Data"."Difficulty"`).
 /// - `ty` (optional): A chain of conversion method names to call, e.g. `as_byte`, `as_compound.
 ///   Those methods can also be chained, like `as_list.as_compound` to convert to a list of compounds.
 ///
 /// # Returns
 /// An `Option` containing the field value, optionally converted according to `ty`.
-/// Returns `None` if the field does not exist or if any conversion in the chain fails.
+/// Returns `None` if any of the fields does not exist or if any conversion in the chain fails.
 ///
 /// # Examples
-///
-/// Basic usage: get the raw field value
-/// ```rust
+/// ```
 /// use nbt_rs::{get_field, types::NbtTag, parse_nbt};
 /// let compound = parse_nbt(include_bytes!("../tests/data/level_uncompressed.dat")).unwrap().1;
-/// let data = get_field!(compound, "Data", as_compound).unwrap();
+/// // Simply get one filed.
+/// debug_assert!(get_field!(compound, "Data").is_some());
 ///
-/// let difficulty = get_field!(data, "Difficulty");
+/// // Get a nested field.
+/// let difficulty = get_field!(compound, "Data"."Difficulty");
 /// assert_eq!(difficulty, Some(&NbtTag::Byte(2i8)));
 ///
-/// let list = get_field!(data, "ServerBrands", as_list.as_string);
+/// // Get and convert a nested filed.
+/// let list = get_field!(compound, "Data"."ServerBrands", as_list.as_string);
 /// assert_eq!(
 ///     list,
 ///     Some(
@@ -35,8 +36,12 @@
 /// ```
 #[macro_export]
 macro_rules! get_field {
-    ($input:ident, $field:literal $(, $($ty:ident).*)? ) => {{
-        $input.get($field)
+    ($input:ident, $first:literal $(. $rest:literal)* $(, $($ty:ident).*)? ) => {{
+        $input.get($first)
+        $(
+            .and_then(|v| v.as_compound())
+            .and_then(|v| v.get($rest))
+        )*
         $(
             $(
                 .and_then(|v| v.$ty())
