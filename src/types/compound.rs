@@ -6,16 +6,14 @@ use crate::{
     types::{NbtString, NbtTag},
 };
 
-/// An NBT Compound.
-///
-/// Ensures no items have duplicate keys.
+/// A type for nbt compounds, makes sure the data is valid.
 #[derive(Debug, PartialEq, Clone, PartialOrd)]
 pub struct NbtCompound {
     pub(crate) data: Vec<(NbtString, NbtTag)>,
 }
 
 impl NbtCompound {
-    /// Gets an element by name.
+    /// Gets an element by name, if one exists.
     pub fn get(&self, str: &str) -> Option<&NbtTag> {
         self.data.iter().find(|e| e.0 == str).map(|e| &e.1)
     }

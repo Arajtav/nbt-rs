@@ -7,37 +7,35 @@ use crate::{
     types::{NbtArray, NbtCompound, NbtString, tag::NbtTagId},
 };
 
-/// An NBT List.
-///
 /// Represents all possible NBT lists.
-/// Uses NBT `Array` underneath as it is the same thing really.
+/// Uses `NbtArray` underneath as it is the same thing really.
 #[derive(Debug, EnumAsInner, PartialEq, PartialOrd, Clone)]
 pub enum NbtList {
-    /// An empty `List` with no type.
+    /// An empty list with no type.
     End,
-    /// A `List` of signed bytes.
+    /// A list of signed bytes.
     Byte(NbtArray<i8>),
-    /// A `List` of signed 2-byte integers.
+    /// A list of signed 2-byte integers.
     Short(NbtArray<i16>),
-    /// A `List` of signed 4-byte integers.
+    /// A list of signed 4-byte integers.
     Int(NbtArray<i32>),
-    /// A `List` of signed 8-byte integers.
+    /// A list of signed 8-byte integers.
     Long(NbtArray<i64>),
-    /// A `List` of 4-byte floats.
+    /// A list of 4-byte floats.
     Float(NbtArray<f32>),
-    /// A `List` of 8-byte floats.
+    /// A list of 8-byte floats.
     Double(NbtArray<f64>),
-    /// A `List` of NBT Byte Arrays.
+    /// A list of nbt Byte Arrays.
     ByteArray(NbtArray<NbtArray<i8>>),
-    /// A `List` of NBT `String`s.
+    /// A list of `NbtString`s.
     String(NbtArray<NbtString>),
-    /// A `List` of NBT `List`s.
+    /// A list of `NbtList`s.
     List(NbtArray<NbtList>),
-    /// A `List` of NBT Compounds.
+    /// A list of `NbtCompound`s.
     Compound(NbtArray<NbtCompound>),
-    /// A `List` of NBT Int Arrays.
+    /// A list of nbt Int Arrays.
     IntArray(NbtArray<NbtArray<i32>>),
-    /// A `List` of NBT Long Arrays.
+    /// A list of nbt Long Arrays.
     LongArray(NbtArray<NbtArray<i64>>),
 }
 

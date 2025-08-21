@@ -7,9 +7,7 @@ use crate::{
     types::{NbtArray, NbtCompound, NbtList, NbtString},
 };
 
-/// An NBT Tag.
-///
-/// Represents all defined NBT tags.
+/// An enum representing all nbt tags.
 #[derive(Debug, EnumAsInner, PartialEq, PartialOrd, Clone)]
 pub enum NbtTag {
     /// An empty tag.
@@ -26,17 +24,17 @@ pub enum NbtTag {
     Float(f32),
     /// A 8-byte float.
     Double(f64),
-    /// An NBT `Array` of signed bytes.
+    /// An `NbtArray` of signed bytes.
     ByteArray(NbtArray<i8>),
-    /// An NBT `String`.
+    /// An `NbtString`.
     String(NbtString),
-    /// An NBT `List`.
+    /// An `NbtList`.
     List(NbtList),
-    /// A `HashMap` of NBT `Tag`s, with NBT `String` as a key.
+    /// An `NbtCompound`.
     Compound(NbtCompound),
-    /// An NBT `Array` of signed 4-byte integer.
+    /// An `NbtArray` of signed 4-byte integer.
     IntArray(NbtArray<i32>),
-    /// An NBT `Array` of signed 8-byte integer.
+    /// An `NbtArray` of signed 8-byte integer.
     LongArray(NbtArray<i64>),
 }
 

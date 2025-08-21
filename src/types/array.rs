@@ -4,9 +4,7 @@ use bytemuck::cast_slice;
 
 use crate::{error::ValidationError, traits::NbtSerialize};
 
-/// An NBT Array.
-///
-/// Contains a fixed number of items, up to `i32::MAX`.
+/// A wrapper around a `Vec<T>`, limiting its length to the maximum allowed in nbt.
 #[derive(Debug, PartialEq, Clone, Hash)]
 pub struct NbtArray<T> {
     pub(crate) items: Vec<T>,
@@ -43,10 +41,15 @@ impl<T: fmt::Display> fmt::Display for NbtArray<T> {
 impl<T> TryFrom<Vec<T>> for NbtArray<T> {
     type Error = (ValidationError, Vec<T>);
 
-    /// Attempts to create an `Array` from a `Vec`.
+    /// Attempts to create an `NbtArray`.
     ///
     /// # Errors
-    /// Returns an error if the `Vec` has more than `i32::MAX` elements.
+    /// Will fail if the source vec has more than `i32::MAX` items.
+    ///
+    /// # Examples
+    /// ```
+    /// let nbt_array: nbt_rs::types::NbtArray<i8> = vec![0i8, 1i8, 2i8].try_into().unwrap();
+    /// ```
     fn try_from(vec: Vec<T>) -> Result<Self, Self::Error> {
         if vec.len() > i32::MAX as usize {
             Err((ValidationError::ArrayTooLong(vec.len()), vec))

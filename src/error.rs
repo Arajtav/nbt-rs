@@ -31,7 +31,7 @@ pub enum ParseError {
 }
 
 /// Represents the errors caused by trying to create an invalid NBT tag.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ValidationError {
     /// Indicates that the `Array` exceeds the maximum allowed length.
     #[error("The array is to long {0}/{max}", max = i32::MAX)]

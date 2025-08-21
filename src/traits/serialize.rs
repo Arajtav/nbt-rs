@@ -1,9 +1,22 @@
-/// Nbt Serialize Trait
-///
-/// A basic trait to serialize nbt payload.
-/// Implemented for all the types nbt uses.
+/// Mostly for readability, allows getting the nbt tag payload from types that implement it.
+/// It is used internally, most likely you should not implement or use it yourself.
 pub trait NbtSerialize {
-    /// Serializes the value, extending the `buf`.
+    /// Serializes the nbt payload of `self` extending the buffer.
+    ///
+    /// # Examples
+    /// ```
+    /// use nbt_rs::traits::NbtSerialize;
+    /// struct Example { value: i32 }
+    /// impl NbtSerialize for Example {
+    ///     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>) {
+    ///         buf.extend(&self.value.to_be_bytes());
+    ///     }
+    /// }
+    ///
+    /// let mut buffer = Vec::new();
+    /// Example { value: 0 }.serialize_nbt_payload(&mut buffer);
+    /// assert_eq!(buffer.len(), 4);
+    /// ```
     fn serialize_nbt_payload(&self, buf: &mut Vec<u8>);
 }
 

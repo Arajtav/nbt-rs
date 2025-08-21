@@ -7,9 +7,7 @@ use std::{
 
 use crate::{error::ValidationError, traits::NbtSerialize};
 
-/// An NBT String.
-///
-/// Wrapper around a `String`, limiting its length to `u16:MAX` bytes.
+/// A wrapper around a `String` making sure it is a valid nbt string.
 #[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct NbtString {
     pub(crate) str: String,
@@ -38,10 +36,15 @@ impl Hash for NbtString {
 impl TryFrom<String> for NbtString {
     type Error = (ValidationError, String);
 
-    /// Attempts to create a `NbtString` from an `String`.
+    /// Attempts to create an `NbtString`
     ///
     /// # Errors
-    /// Returns an error if the `String` is longer than `u16::MAX`.
+    /// Will fail if the source string is longer than `u16::MAX` bytes.
+    ///
+    /// # Examples
+    /// ```
+    /// let nbt_string: nbt_rs::types::NbtString = "AnNbtString".to_owned().try_into().unwrap();
+    /// ```
     fn try_from(str: String) -> Result<Self, Self::Error> {
         if str.len() > u16::MAX as usize {
             Err((ValidationError::StringTooLong(str.len()), str))

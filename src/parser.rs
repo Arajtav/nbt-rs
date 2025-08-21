@@ -7,8 +7,7 @@ use crate::{
     types::{NbtArray, NbtCompound, NbtList, NbtString, NbtTag, NbtTagId},
 };
 
-/// A shorthand for `Result<T, ParseError>`.
-pub type Result<T> = std::result::Result<T, ParseError>;
+type Result<T> = std::result::Result<T, ParseError>;
 
 #[inline(always)]
 fn split_1(mut data: &[u8]) -> Result<(u8, &[u8])> {
@@ -222,9 +221,23 @@ fn parse_compound(mut data: &[u8]) -> Result<(NbtCompound, &[u8])> {
     }
 }
 
-/// Parses a named NBT compound from a byte slice.
+/// Parses a named `NbtCompound` from a byte slice.
 ///
-/// Expects the input to be a named NBT Compound, with no leftover data.
+/// # Errors
+/// Will fail if the nbt data is invalid, or if there is any leftover data after parsing.
+///
+/// # Examples
+/// ```
+/// use nbt_rs::{parse_nbt, get_field};
+/// let data = &[
+///     0x0a, 0x00, 0x00, 0x01, 0x00, 0x01, b'a', 0x00, 0x01, 0x00, 0x01, b'b', 0x01, 0x00,
+/// ];
+///
+/// let (name, root) = parse_nbt(data).unwrap();
+/// assert!(name.is_empty());
+/// assert_eq!(get_field!(root, "a", as_byte).unwrap(), &0x00);
+/// assert_eq!(get_field!(root, "b", as_byte).unwrap(), &0x01);
+/// ```
 pub fn parse_nbt(data: &[u8]) -> Result<(NbtString, NbtCompound)> {
     let (tag_id, data) = parse_tag_id(data)?;
     if tag_id != NbtTagId::Compound {
